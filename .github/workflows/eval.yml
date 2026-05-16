@@ -1,0 +1,22 @@
+# ============================================================================
+# RAG evaluation pipeline.
+#
+# Placeholder workflow until evaluation harness is built (Phase 5).
+# Currently a no-op so this file doesn't show as a failure on every push.
+# ============================================================================
+
+name: eval
+
+on:
+  workflow_dispatch:    # only run when manually triggered, for now
+
+permissions:
+  contents: read
+
+jobs:
+  noop:
+    name: Placeholder
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evaluation harness not yet built
+        run: echo "RAG evaluation pipeline will be added in Phase 5."

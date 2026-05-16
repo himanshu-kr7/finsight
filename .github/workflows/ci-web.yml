@@ -1,0 +1,32 @@
+# ============================================================================
+# CI for apps/web — Next.js frontend.
+#
+# Placeholder workflow until the frontend is scaffolded (Phase 2).
+# Currently a no-op so this file doesn't show as a failure on every push.
+# ============================================================================
+
+name: ci-web
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/ci-web.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/ci-web.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  noop:
+    name: Placeholder
+    runs-on: ubuntu-latest
+    steps:
+      - name: Frontend not yet scaffolded
+        run: echo "Next.js frontend will be added in Phase 2."

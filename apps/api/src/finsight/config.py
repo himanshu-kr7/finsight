@@ -26,6 +26,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # autocomplete, type-checking, and clear error messages on invalid values.
 # ---------------------------------------------------------------------------
 
+
 class AppEnv(StrEnum):
     """Deployment environment."""
 

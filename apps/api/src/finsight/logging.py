@@ -91,6 +91,7 @@ def get_logger(name: str | None = None, **initial_values: Any) -> structlog.stdl
     logger: structlog.stdlib.BoundLogger = structlog.get_logger(name, **initial_values)
     return logger
 
+
 def _resolve_log_level(level: LogLevel) -> int:
     """Convert our LogLevel enum to the stdlib logging integer constant."""
     value: int = getattr(logging, level.value)

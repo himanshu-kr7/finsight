@@ -1,0 +1,109 @@
+# ============================================================================
+# CI for apps/api — runs on every push and pull request that touches the API.
+#
+# What it does:
+#   - Lints with ruff
+#   - Type-checks with mypy (strict)
+#   - Runs pytest with coverage
+#   - Uploads coverage report as an artifact
+#
+# All four jobs use the same uv-managed environment.
+# ============================================================================
+
+name: ci-api
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/api/**"
+      - ".github/workflows/ci-api.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/api/**"
+      - ".github/workflows/ci-api.yml"
+  workflow_dispatch:   # allows manual triggering from the Actions tab
+
+# Cancel previous in-flight runs on the same ref to save CI minutes.
+concurrency:
+  group: ci-api-${{ github.ref }}
+  cancel-in-progress: true
+
+# Sane default permissions — restrict the GITHUB_TOKEN to read-only.
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.5.11"
+
+jobs:
+  quality:
+    name: Lint, typecheck, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: apps/api
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "apps/api/uv.lock"
+
+      - name: Install Python ${{ env.PYTHON_VERSION }}
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Sync dependencies
+        run: uv sync --frozen --extra dev
+
+      - name: Ruff lint
+        run: uv run ruff check src tests
+
+      - name: Ruff format (check only)
+        run: uv run ruff format --check src tests
+
+      - name: Mypy strict
+        run: uv run mypy src
+
+      - name: Pytest with coverage
+        run: uv run pytest --cov=src/finsight --cov-report=xml --cov-report=term
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: apps/api/coverage.xml
+          retention-days: 14
+
+  docker-build:
+    name: Docker build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: quality   # only run if quality job passes
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build api image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./apps/api
+          file: ./apps/api/Dockerfile
+          push: false
+          tags: finsight-api:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

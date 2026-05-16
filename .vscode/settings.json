@@ -20,6 +20,9 @@
   "python.analysis.diagnosticMode": "workspace",
   "python.analysis.autoImportCompletions": true,
   "python.analysis.indexing": true,
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportMissingTypeStubs": "none"
+  },
   "python.testing.pytestEnabled": true,
   "python.testing.unittestEnabled": false,
   "python.testing.pytestArgs": ["apps/api/tests"],
@@ -98,6 +101,7 @@
     "contextvars",
     "cohere",
     "docling",
+    "fastapi",
     "finsight",
     "Groq",
     "httpx",

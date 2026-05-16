@@ -1,0 +1,45 @@
+# Files and folders NOT copied into the Docker build context.
+# Smaller context = faster builds, smaller images, fewer accidental leaks.
+
+# Python build/test artifacts
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Virtual envs (we build a fresh one in the container)
+.venv/
+venv/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Secrets and local config
+.env
+.env.local
+.env.*.local
+
+# Tests and docs (not needed at runtime)
+tests/
+notebooks/
+scripts/
+*.md
+
+# Build outputs
+dist/
+build/
+*.egg-info/

@@ -1,0 +1,155 @@
+# ============================================================================
+# finsight — full stack development environment
+#
+# Usage:
+#   docker compose up -d              # start everything in background
+#   docker compose logs -f api        # follow API logs
+#   docker compose down               # stop everything (preserves data)
+#   docker compose down -v            # stop and DELETE volumes (fresh start)
+#
+# Services exposed to host:
+#   API           http://localhost:8000   (Swagger at /docs)
+#   Qdrant UI     http://localhost:6333/dashboard
+#   Postgres      localhost:5432
+#   Redis         localhost:6379
+#   Langfuse UI   http://localhost:3001
+# ============================================================================
+
+name: finsight
+
+services:
+  # --------------------------------------------------------------------------
+  # API — our FastAPI service
+  # --------------------------------------------------------------------------
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    image: finsight-api:latest
+    container_name: finsight-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      # Inside the docker network, services are reached by container name.
+      # These override the .env values which assume localhost.
+      QDRANT_URL: http://qdrant:6333
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+      REDIS_URL: redis://redis:6379/0
+      LANGFUSE_HOST: http://langfuse:3000
+    depends_on:
+      qdrant:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - finsight
+
+  # --------------------------------------------------------------------------
+  # Qdrant — vector database
+  # --------------------------------------------------------------------------
+  qdrant:
+    image: qdrant/qdrant:v1.12.4
+    container_name: finsight-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"   # REST API + dashboard
+      - "6334:6334"   # gRPC
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c ':> /dev/tcp/127.0.0.1/6333' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - finsight
+
+  # --------------------------------------------------------------------------
+  # PostgreSQL — for sessions, eval results, conversation history
+  # --------------------------------------------------------------------------
+  postgres:
+    image: postgres:17-alpine
+    container_name: finsight-postgres
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-finsight}
+      POSTGRES_USER: ${POSTGRES_USER:-finsight}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-this-in-production}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-finsight} -d ${POSTGRES_DB:-finsight}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - finsight
+
+  # --------------------------------------------------------------------------
+  # Redis — caching + rate limiting
+  # --------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: finsight-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - finsight
+
+  # --------------------------------------------------------------------------
+  # Langfuse — LLM observability (used from Phase 4 onward)
+  # Disabled by default via 'profiles' — start it explicitly:
+  #   docker compose --profile observability up -d
+  # --------------------------------------------------------------------------
+  langfuse:
+    image: langfuse/langfuse:2
+    container_name: finsight-langfuse
+    restart: unless-stopped
+    profiles: [observability]
+    ports:
+      - "3001:3000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-finsight}:${POSTGRES_PASSWORD:-change-this-in-production}@postgres:5432/${POSTGRES_DB:-finsight}
+      NEXTAUTH_URL: http://localhost:3001
+      NEXTAUTH_SECRET: change-this-langfuse-secret
+      SALT: change-this-langfuse-salt
+      TELEMETRY_ENABLED: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - finsight
+
+
+# ============================================================================
+# Volumes — named volumes survive `docker compose down`.
+# Use `docker compose down -v` to wipe them.
+# ============================================================================
+volumes:
+  qdrant_data:
+  postgres_data:
+  redis_data:
+
+
+# ============================================================================
+# Network — all services share one bridge so they can resolve each other by name.
+# ============================================================================
+networks:
+  finsight:
+    driver: bridge

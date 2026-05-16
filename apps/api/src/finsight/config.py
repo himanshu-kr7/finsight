@@ -16,10 +16,10 @@ from __future__ import annotations
 from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import Field, SecretStr, field_validator, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 # ---------------------------------------------------------------------------
 # Enums for constrained string fields. Using enums (vs raw strings) gives us
@@ -52,14 +52,26 @@ class LogFormat(StrEnum):
 
 
 # ---------------------------------------------------------------------------
-# Resolve the project root so we can locate the .env file regardless of where
-# the app is started from (uv run, docker, pytest, etc.).
-# This file lives at: <root>/apps/api/src/finsight/config.py
-# So the root is four levels up.
+# Locate the project's .env file. Used by Pydantic Settings on local runs
+# (uv run, pytest). In Docker/production, env vars come from the runtime
+# environment, not a file — so missing .env is expected and fine.
+#
+# Layout on laptop:  <root>/apps/api/src/finsight/config.py  → parents[4]
+# Layout in Docker:  /app/src/finsight/config.py             → no project root
 # ---------------------------------------------------------------------------
 
-PROJECT_ROOT: Path = Path(__file__).resolve().parents[4]
-ENV_FILE: Path = PROJECT_ROOT / ".env"
+
+def _find_env_file() -> Path | None:
+    """Walk up from this file looking for a .env. Returns None if not found."""
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        candidate = parent / ".env"
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+ENV_FILE: Path | None = _find_env_file()
 
 
 # ---------------------------------------------------------------------------
@@ -87,7 +99,9 @@ class APISettings(BaseSettings):
 
     host: str = "0.0.0.0"  # noqa: S104  (binding 0.0.0.0 is intentional for Docker)
     port: int = Field(default=8000, ge=1, le=65535)
-    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    cors_origins: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["http://localhost:3000"]
+    )
 
     @field_validator("cors_origins", mode="before")
     @classmethod
@@ -222,7 +236,7 @@ class Settings(BaseSettings):
     """Root settings container. Composes all sub-settings groups."""
 
     model_config = SettingsConfigDict(
-        env_file=str(ENV_FILE) if ENV_FILE.exists() else None,
+        env_file=str(ENV_FILE) if ENV_FILE is not None else None,
         env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=False,

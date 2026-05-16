@@ -40,9 +40,9 @@ def configure_logging() -> None:
 
     # Shared processors run on every log event regardless of output format.
     shared_processors: list[Processor] = [
-        structlog.contextvars.merge_contextvars,           # request-scoped context
-        structlog.stdlib.add_log_level,                    # adds level to event dict
-        structlog.stdlib.add_logger_name,                  # adds logger name
+        structlog.contextvars.merge_contextvars,  # request-scoped context
+        structlog.stdlib.add_log_level,  # adds level to event dict
+        structlog.stdlib.add_logger_name,  # adds logger name
         structlog.processors.TimeStamper(fmt="iso", utc=True),
         structlog.processors.StackInfoRenderer(),
         structlog.processors.format_exc_info,
@@ -88,9 +88,10 @@ def get_logger(name: str | None = None, **initial_values: Any) -> structlog.stdl
         log = get_logger(__name__, service="retrieval")
         log.info("query_executed", duration_ms=42)
     """
-    return structlog.get_logger(name, **initial_values)
-
+    logger: structlog.stdlib.BoundLogger = structlog.get_logger(name, **initial_values)
+    return logger
 
 def _resolve_log_level(level: LogLevel) -> int:
     """Convert our LogLevel enum to the stdlib logging integer constant."""
-    return getattr(logging, level.value)
+    value: int = getattr(logging, level.value)
+    return value

@@ -13,7 +13,7 @@ Usage:
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -21,14 +21,12 @@ from typing import Literal
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 # ---------------------------------------------------------------------------
 # Enums for constrained string fields. Using enums (vs raw strings) gives us
 # autocomplete, type-checking, and clear error messages on invalid values.
 # ---------------------------------------------------------------------------
 
-
-class AppEnv(str, Enum):
+class AppEnv(StrEnum):
     """Deployment environment."""
 
     DEVELOPMENT = "development"
@@ -36,7 +34,7 @@ class AppEnv(str, Enum):
     PRODUCTION = "production"
 
 
-class LogLevel(str, Enum):
+class LogLevel(StrEnum):
     """Standard logging levels."""
 
     DEBUG = "DEBUG"
@@ -45,7 +43,7 @@ class LogLevel(str, Enum):
     ERROR = "ERROR"
 
 
-class LogFormat(str, Enum):
+class LogFormat(StrEnum):
     """Log output format. Use 'console' locally, 'json' in production."""
 
     CONSOLE = "console"
@@ -253,8 +251,12 @@ class Settings(BaseSettings):
     def _validate_production_safety(self) -> Settings:
         """Refuse to boot in production with insecure defaults."""
         if self.is_production:
-            insecure_password = self.postgres.password.get_secret_value() == "change-this-in-production"
-            insecure_jwt = self.auth.jwt_secret_key.get_secret_value() == "generate-with-openssl-rand-hex-32"
+            insecure_password = (
+                self.postgres.password.get_secret_value() == "change-this-in-production"
+            )
+            insecure_jwt = (
+                self.auth.jwt_secret_key.get_secret_value() == "generate-with-openssl-rand-hex-32"
+            )
 
             problems: list[str] = []
             if insecure_password:
@@ -266,8 +268,7 @@ class Settings(BaseSettings):
 
             if problems:
                 raise ValueError(
-                    "Refusing to start in production with insecure defaults: "
-                    + "; ".join(problems)
+                    "Refusing to start in production with insecure defaults: " + "; ".join(problems)
                 )
         return self
 
@@ -285,4 +286,4 @@ def get_settings() -> Settings:
       - Validation runs only once per process
       - Tests can override by calling `get_settings.cache_clear()`
     """
-    return Settings()  # type: ignore[call-arg]
+    return Settings()

@@ -1,0 +1,200 @@
+# ============================================================================
+# finsight backend — Python project manifest
+# Managed by uv (https://docs.astral.sh/uv/)
+# ============================================================================
+
+[project]
+name = "finsight"
+version = "0.1.0"
+description = "Agentic RAG over SEC filings and earnings calls"
+readme = "../../README.md"
+requires-python = ">=3.12,<3.13"
+license = { text = "MIT" }
+authors = [
+    { name = "Himanshu Kumar", email = "190688799+himanshu-kr7@users.noreply.github.com" }
+]
+keywords = ["rag", "llm", "agents", "finance", "sec-filings", "langgraph", "qdrant"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# ----------------------------------------------------------------------------
+# Runtime dependencies (the minimal set needed to run the API)
+# We'll add to this incrementally as we build each phase.
+# Phase 1 keeps it deliberately small.
+# ----------------------------------------------------------------------------
+dependencies = [
+    # --- Core framework ---
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+
+    # --- Configuration & validation ---
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.6.0",
+
+    # --- Logging ---
+    "structlog>=24.4.0",
+
+    # --- HTTP client (we'll need this soon for SEC EDGAR) ---
+    "httpx>=0.27.0",
+
+    # --- Environment file support ---
+    "python-dotenv>=1.0.1",
+]
+
+# ----------------------------------------------------------------------------
+# Optional dependency groups — installed only when needed.
+# Run `uv sync --all-extras` to install everything,
+# or `uv sync --extra dev` for just dev tools.
+# ----------------------------------------------------------------------------
+[project.optional-dependencies]
+dev = [
+    # Linting & formatting
+    "ruff>=0.7.0",
+    "mypy>=1.13.0",
+
+    # Testing
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    "httpx>=0.27.0",  # also used for testing FastAPI
+
+    # Pre-commit
+    "pre-commit>=4.0.0",
+]
+
+# Placeholders — we'll populate these in their respective phases.
+ingestion = [
+    # Filled in Phase 2: SEC EDGAR fetcher, PDF parsers (Docling/LlamaParse), chunking
+]
+retrieval = [
+    # Filled in Phase 2-3: Qdrant client, BM25, rerankers
+]
+generation = [
+    # Filled in Phase 3: LangChain, LangGraph, multi-provider LLM clients
+]
+evaluation = [
+    # Filled in Phase 5: RAGAs, DeepEval, TruLens
+]
+observability = [
+    # Filled in Phase 4: Langfuse
+]
+
+# ----------------------------------------------------------------------------
+# Build system — tells uv how to find and package the source code
+# ----------------------------------------------------------------------------
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/finsight"]
+
+# ============================================================================
+# Tool configurations
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Ruff — linter + formatter (replaces black, isort, flake8, pyupgrade in one)
+# ----------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests", "scripts"]
+
+[tool.ruff.lint]
+# Enable a strong default rule set without being annoying.
+# Rule reference: https://docs.astral.sh/ruff/rules/
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort (import sorting)
+    "B",      # flake8-bugbear (common bugs)
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade (modern Python idioms)
+    "N",      # pep8-naming
+    "SIM",    # flake8-simplify
+    "RUF",    # ruff-specific rules
+    "ASYNC",  # async-specific checks
+    "S",      # flake8-bandit (security)
+    "T20",    # flake8-print (no print statements in production code)
+]
+ignore = [
+    "E501",   # line too long (formatter handles this)
+    "S101",   # use of assert (fine in tests)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S", "T20"]   # tests can use asserts and prints freely
+"scripts/**/*.py" = ["T20"]      # scripts can print
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+# ----------------------------------------------------------------------------
+# Mypy — static type checker
+# ----------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unreachable = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+show_error_codes = true
+pretty = true
+exclude = ["tests/", "scripts/"]
+
+# ----------------------------------------------------------------------------
+# Pytest configuration
+# ----------------------------------------------------------------------------
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = [
+    "-ra",                          # show extra summary for all non-passing
+    "--strict-markers",             # error on undefined markers
+    "--strict-config",              # error on bad pytest config
+    "--cov=src/finsight",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+]
+markers = [
+    "slow: tests that take >1s",
+    "integration: tests that hit external services",
+    "unit: pure unit tests with no I/O",
+]
+
+# ----------------------------------------------------------------------------
+# Coverage configuration
+# ----------------------------------------------------------------------------
+[tool.coverage.run]
+source = ["src/finsight"]
+branch = true
+omit = ["tests/*", "scripts/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+
+# ----------------------------------------------------------------------------
+# uv-specific configuration
+# ----------------------------------------------------------------------------
+[tool.uv]
+package = true

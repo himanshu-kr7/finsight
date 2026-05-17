@@ -130,36 +130,26 @@ LLM providers are multi-vendor by design — OpenAI, Anthropic, Cohere, Groq, To
 - [ ] **Phase 5 — Evaluation rigor.** RAGAs + custom rubrics, regression suite over a curated eval set, drift monitoring, A/B framework.
 - [ ] **Phase 6 — Polish & deploy.** Frontend live on `finsight.<domain>`, full docs pass, demo video.
 
----
-
 ## Project structure
-finsight/
-├── apps/
-│   ├── api/                       # FastAPI backend
-│   │   ├── src/finsight/
-│   │   │   ├── api/               # routes + app factory
-│   │   │   ├── agents/            # LangGraph agents (Phase 3)
-│   │   │   ├── evaluation/        # RAGAs harness (Phase 5)
-│   │   │   ├── generation/        # LLM prompting and synthesis
-│   │   │   ├── ingestion/         # SEC fetcher, parsing, chunking (Phase 2)
-│   │   │   ├── observability/
-│   │   │   ├── retrieval/         # Hybrid search, reranking (Phase 2)
-│   │   │   ├── config.py
-│   │   │   └── logging.py
-│   │   ├── tests/                 # unit + integration
-│   │   ├── Dockerfile
-│   │   └── pyproject.toml
-│   └── web/                       # Next.js frontend (Phase 2)
-├── data/                          # corpus + processed artifacts (gitignored)
-├── docs/                          # architecture docs + ADRs
-├── notebooks/                     # ad-hoc analysis
-├── .github/workflows/             # CI
-├── docker-compose.yml
-├── Makefile
-└── README.md
 
----
-
+- **`apps/api/`** — FastAPI backend
+  - `src/finsight/api/` — routes and FastAPI app factory
+  - `src/finsight/agents/` — LangGraph agents _(Phase 3)_
+  - `src/finsight/retrieval/` — hybrid search and reranking _(Phase 2)_
+  - `src/finsight/ingestion/` — SEC fetcher, parsing, chunking _(Phase 2)_
+  - `src/finsight/generation/` — LLM prompting and synthesis
+  - `src/finsight/evaluation/` — RAGAs harness _(Phase 5)_
+  - `src/finsight/observability/` — Langfuse + OpenTelemetry _(Phase 4)_
+  - `src/finsight/config.py` — Pydantic Settings
+  - `src/finsight/logging.py` — structlog setup
+  - `tests/` — unit + integration tests
+  - `Dockerfile`
+- **`apps/web/`** — Next.js frontend _(Phase 2)_
+- **`data/`** — corpus + processed artifacts _(gitignored)_
+- **`docs/`** — architecture docs and ADRs
+- **`notebooks/`** — ad-hoc analysis
+- **`.github/workflows/`** — CI
+- `docker-compose.yml`, `Makefile`, `README.md`
 ## Development
 
 All common commands are wrapped in `make`:

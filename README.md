@@ -25,14 +25,13 @@ It is the v2 follow-up to an earlier research project, [IITP_RAG_project](https:
 The original [IITP_RAG_project](https://github.com/himanshu-kr7/IITP_RAG_project) was a single-document RAG built during my MTech at IIT Patna. Its final version (V1.3) hit 94.7% answer relevancy on RAGAs — strong numbers for a notebook-driven research artifact.
 
 **finsight** is the production-engineering follow-up. The research questions shift:
-
 | | V1 (IITP_RAG_project) | V2 (finsight) |
 |---|---|---|
 | **Scope** | Single document, single question | Multi-document, multi-company, cross-year |
-| **Retrieval** | BM25 + FAISS + Cohere reranker | Hybrid dense+sparse, contextual chunking, semantic + parent-doc retrieval |
+| **Retrieval** | BM25 + FAISS hybrid + prompt engineering | Hybrid dense+sparse, contextual chunking, semantic + parent-doc retrieval, Cohere reranking |
 | **Reasoning** | Single-shot retrieve → generate | LangGraph agent: plan → retrieve → critique → refine |
-| **Eval** | RAGAs notebook | RAGAs + custom rubrics + Langfuse traces + regression suite |
-| **Deployment** | Local notebook | Dockerized FastAPI + Next.js, observability, CI/CD |
+| **Eval** | RAGAs notebook (94.7% answer relevancy, 78.8% faithfulness) | RAGAs + custom rubrics + Langfuse traces + regression suite |
+| **Deployment** | Streamlit app | Dockerized FastAPI + Next.js, observability, CI/CD |
 
 The goal isn't bigger benchmark numbers. It's whether a real RAG system survives contact with real production constraints.
 

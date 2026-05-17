@@ -176,8 +176,8 @@ make precommit-install
 
 ## Documentation
 
-- [Architecture overview](docs/architecture.md) _(in progress)_
-- [ADR 0001 — initial architecture decisions](docs/decisions/0001-architecture.md) _(in progress)_
+- [ADR 0001 — Initial architecture decisions](docs/decisions/0001-architecture.md)
+- [Architecture overview](docs/architecture.md) _(coming in Phase 2)_
 
 ---
 

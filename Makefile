@@ -91,6 +91,8 @@ shell-api:  ## Open a shell inside the running api container
 api-local:  ## Run the API locally with auto-reload on port 8000
 	cd $(API_DIR) && uv run uvicorn finsight.api.main:app --reload --host 0.0.0.0 --port 8000
 
+web-dev:  ## Run the Next.js dev server (Turbopack) on :3000
+	pnpm --filter web dev
 # ----------------------------------------------------------------------------
 # Quality gates — what CI runs
 # ----------------------------------------------------------------------------

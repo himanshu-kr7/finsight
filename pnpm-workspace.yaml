@@ -1,0 +1,8 @@
+packages:
+  - "apps/*"
+
+# pnpm v11 gates dependency build scripts; each must be explicitly allowed or denied.
+allowBuilds:
+  sharp: true
+  unrs-resolver: true
+  msw: false

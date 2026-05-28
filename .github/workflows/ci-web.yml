@@ -1,8 +1,14 @@
 # ============================================================================
-# CI for apps/web — Next.js frontend.
+# CI for apps/web — runs on every push and pull request that touches the
+# frontend or the workspace dependency graph.
 #
-# Placeholder workflow until the frontend is scaffolded (Phase 2).
-# Currently a no-op so this file doesn't show as a failure on every push.
+# What it does:
+#   - Lints with ESLint
+#   - Type-checks with tsc (--noEmit)
+#   - Builds the production bundle with `next build`
+#
+# Dependencies resolve through the root pnpm lockfile, so changes to the
+# lockfile or workspace manifest also trigger this workflow.
 # ============================================================================
 
 name: ci-web
@@ -12,21 +18,67 @@ on:
     branches: [main]
     paths:
       - "apps/web/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
       - ".github/workflows/ci-web.yml"
   pull_request:
     branches: [main]
     paths:
       - "apps/web/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
       - ".github/workflows/ci-web.yml"
-  workflow_dispatch:
+  workflow_dispatch:   # allows manual triggering from the Actions tab
 
+# Cancel previous in-flight runs on the same ref to save CI minutes.
+concurrency:
+  group: ci-web-${{ github.ref }}
+  cancel-in-progress: true
+
+# Sane default permissions — restrict the GITHUB_TOKEN to read-only.
 permissions:
   contents: read
 
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "11.1.2"
+  NEXT_TELEMETRY_DISABLED: "1"
+
 jobs:
-  noop:
-    name: Placeholder
+  quality:
+    name: Lint, typecheck, build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/web
+
     steps:
-      - name: Frontend not yet scaffolded
-        run: echo "Next.js frontend will be added in Phase 2."
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      # Runs before setup-node so the pnpm store path is resolvable for caching.
+      # Version is required here since there is no packageManager field to read.
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: ESLint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build

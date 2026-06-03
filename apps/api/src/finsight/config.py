@@ -18,6 +18,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Literal
 
+from dotenv import load_dotenv
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
@@ -72,6 +73,11 @@ def _find_env_file() -> Path | None:
 
 
 ENV_FILE: Path | None = _find_env_file()
+# Populate os.environ from .env so each BaseSettings group below — built
+# independently via default_factory — sees it, not just the top-level Settings.
+# override=False keeps real environment variables authoritative over the file.
+if ENV_FILE is not None:
+    load_dotenv(ENV_FILE, override=False)
 
 
 # ---------------------------------------------------------------------------
@@ -200,6 +206,14 @@ class LangfuseSettings(BaseSettings):
     secret_key: SecretStr | None = None
     host: str = "http://localhost:3001"
 
+    @field_validator("public_key", "secret_key", mode="before")
+    @classmethod
+    def _empty_to_none(cls, value: str | None) -> str | None:
+        """Treat a blank env var (LANGFUSE_PUBLIC_KEY=) as unset."""
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
     @property
     def enabled(self) -> bool:
         """Langfuse is active only when both keys are set."""
@@ -212,6 +226,9 @@ class SECSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="SEC_EDGAR_", extra="ignore")
 
     user_agent: str = "finsight your-email@example.com"
+    # SEC enforces a hard ceiling of 10 requests/second per IP; default below it for margin.
+    requests_per_second: float = Field(default=8.0, gt=0, le=10)
+    timeout_seconds: float = Field(default=30.0, gt=0)
 
 
 class AuthSettings(BaseSettings):

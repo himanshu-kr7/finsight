@@ -93,6 +93,11 @@ api-local:  ## Run the API locally with auto-reload on port 8000
 
 web-dev:  ## Run the Next.js dev server (Turbopack) on :3000
 	pnpm --filter web dev
+
+fetch-corpus:  ## Fetch the SEC 10-K corpus into data/raw (use ARGS="--dry-run")
+	cd $(API_DIR) && uv run python scripts/fetch_corpus.py $(ARGS)
+
+
 # ----------------------------------------------------------------------------
 # Quality gates — what CI runs
 # ----------------------------------------------------------------------------

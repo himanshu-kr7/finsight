@@ -69,7 +69,7 @@ dev = [
 
 # Placeholders — we'll populate these in their respective phases.
 ingestion = [
-    # Filled in Phase 2: SEC EDGAR fetcher, PDF parsers (Docling/LlamaParse), chunking
+    "selectolax>=0.3.0",
 ]
 retrieval = [
     # Filled in Phase 2-3: Qdrant client, BM25, rerankers
